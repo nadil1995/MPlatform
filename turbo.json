@@ -1,0 +1,23 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {},
+    "typecheck": {},
+    "test": {
+      "outputs": ["coverage/**"],
+      "passThroughEnv": ["TEST_DATABASE_URL", "DATABASE_URL", "TEST_LOG_LEVEL"]
+    },
+    "e2e": {
+      "cache": false,
+      "passThroughEnv": ["E2E_PORT", "E2E_API_PORT", "E2E_DATABASE_URL", "CI"]
+    }
+  }
+}

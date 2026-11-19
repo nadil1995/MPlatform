@@ -1,0 +1,86 @@
+# =============================================================================
+# Local development stack. NOT used in staging/prod (those run on ECS).
+#
+#   docker compose up -d                       # dependencies only (default)
+#   docker compose --profile app up --build    # also run the production images locally
+#
+# All credentials here are local-only dummies. Real values never go in this file.
+# Ports bind to 127.0.0.1 so nothing is exposed to your network.
+# =============================================================================
+
+name: thaala
+
+services:
+  # PostgreSQL with the same major version as RDS.
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: thaala
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: thaala
+    # POSTGRES_PORT lets you avoid a clash with a Postgres already installed on the host.
+    ports: ['127.0.0.1:${POSTGRES_PORT:-5432}:5432']
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Creates the app/migrate roles and extensions on first start.
+      - ./scripts/dev/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U thaala -d thaala']
+      interval: 5s
+      retries: 10
+
+  # LocalStack emulates S3 and SQS so uploads and queues work offline.
+  localstack:
+    image: localstack/localstack:4
+    environment:
+      SERVICES: s3,sqs
+      AWS_DEFAULT_REGION: ap-south-1
+    ports: ['127.0.0.1:4566:4566']
+    volumes:
+      # Creates buckets and queues on startup.
+      - ./scripts/dev/localstack-init.sh:/etc/localstack/init/ready.d/init.sh:ro
+
+  # Catches all outgoing email (SES is swapped for SMTP locally). UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ['127.0.0.1:1025:1025', '127.0.0.1:8025:8025']
+
+  # --- Optional: production images, to test Dockerfiles locally -------------
+  api:
+    profiles: ['app']
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    env_file: .env
+    depends_on: { postgres: { condition: service_healthy } }
+    ports: ['127.0.0.1:8080:8080']
+    read_only: true # same as ECS readonlyRootFilesystem
+    tmpfs: ['/tmp']
+    cap_drop: ['ALL']
+    security_opt: ['no-new-privileges:true']
+
+  worker:
+    profiles: ['app']
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ['dist/worker.js']
+    env_file: .env
+    depends_on: { postgres: { condition: service_healthy } }
+    read_only: true
+    tmpfs: ['/tmp']
+    cap_drop: ['ALL']
+    security_opt: ['no-new-privileges:true']
+
+  web:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args: { NEXT_PUBLIC_API_URL: 'http://localhost:8080', NEXT_PUBLIC_ENV: 'local' }
+    env_file: .env
+    depends_on: [api]
+    ports: ['127.0.0.1:3000:3000']
+    read_only: true
+    tmpfs: ['/tmp', '/app/apps/web/.next/cache']
+    cap_drop: ['ALL']
+    security_opt: ['no-new-privileges:true']
+
+volumes:
+  pgdata:

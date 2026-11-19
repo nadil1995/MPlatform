@@ -1,0 +1,28 @@
+/*
+ * Tailwind v4 theme for Thaala. Import after `@import 'tailwindcss'`.
+ * Values mirror src/tokens.ts. Font families are CSS variables set by next/font in the
+ * web app, so fonts are self-hosted (no third-party font requests, CSP stays tight).
+ */
+@theme {
+  --font-sans:
+    var(--font-inter), var(--font-noto-sinhala), var(--font-noto-tamil), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-sinhala: var(--font-noto-sinhala), sans-serif;
+  --font-tamil: var(--font-noto-tamil), sans-serif;
+
+  --color-brand-50: #e6f4f2;
+  --color-brand-100: #c7e7e2;
+  --color-brand-600: #0f766e;
+  --color-brand-700: #115e59;
+  --color-brand-900: #0b3b37;
+
+  --color-gig-50: #fce7f0;
+  --color-gig-600: #be185d;
+  --color-gig-700: #9d174d;
+  --color-gig-900: #831843;
+
+  --color-star: #f59e0b;
+
+  --radius-input: 12px;
+  --radius-card: 16px;
+}

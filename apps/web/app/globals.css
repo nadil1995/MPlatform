@@ -1,0 +1,21 @@
+@import 'tailwindcss';
+@import '@thaala/ui/theme.css';
+
+/* Tailwind must see the classes used inside the shared UI package. */
+@source '../../../packages/ui/src';
+
+body {
+  font-family: var(--font-sans);
+  color: #111827;
+  background: #ffffff;
+}
+
+/* Respect reduced-motion preferences (docs/UX_GUIDELINES.md "Accessibility"). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
